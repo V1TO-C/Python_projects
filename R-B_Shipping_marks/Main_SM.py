@@ -1,17 +1,15 @@
-import os
+from os import remove
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.shared import Pt
 from docxcompose.composer import Composer
+from easygui import multenterbox, fileopenbox
 
 
 def main():
-    input_anzahl = input("Anzahl: ")
-    input_pages = int(input("Number of pages: "))
-    input_load_doc_name = "Shipping_M"  # potom upravit na input()
-    input_created_doc_name = input("Name of created file: ") + ".docx"
+    input_anzahl, input_pages, input_created_doc_name, input_load_doc_path = user_input()
 
-    make_improved_document(input_load_doc_name, input_anzahl)
+    make_improved_document(input_load_doc_path, input_anzahl)
 
     compose_doc(input_created_doc_name, "temporary_copy.docx", input_pages)
 
@@ -25,15 +23,15 @@ def delete_paragraph(paragraph):
 
 
 def make_improved_document(load_file, anzahl):
-    doc = Document(load_file)
-    # improved_doc = Document()
-    # art_num = doc.paragraphs[0]
-    # art_num_str = f"1-{art_num}"
+    filename = load_file
+
+    # if '_MEIPASS2' in os.environ:
+    #     filename = os.path.join(os.environ['_MEIPASS2'], filename)
+
+    doc = Document(filename)
 
     table = doc.tables[0]
     table.cell(4, 1).text = anzahl
-
-    # table_art_num = table.cell(6,1).text = f"1-{pages}"
 
     delete_paragraph(doc.paragraphs[1])
     doc.add_paragraph("")
@@ -50,8 +48,8 @@ def compose_doc(created, copy, pages):
     for i in range(pages):
         composer.append(doc)
     composer.save(created)
-    os.remove("temporary_main.docx")
-    os.remove("temporary_copy.docx")
+    remove("temporary_main.docx")
+    remove("temporary_copy.docx")
 
 
 def change_style_paragraphs_tables(load_doc, pages, saved_doc):
@@ -90,5 +88,35 @@ def change_style_paragraphs_tables(load_doc, pages, saved_doc):
     composed_doc.save(saved_doc)
 
 
+def user_input():
+    msg = "Enter your personal information"
+    title = "Credit Card Application"
+    fieldNames = ["Anzahl", "Number of pages:", "Name of created doc:"]
+    fieldValues = ["5 Stück im Karton / 30  Stück im Pallet"]  # we start with blanks for the values
+    fieldValues = multenterbox(msg, title, fieldNames, fieldValues)
+
+    # make sure that none of the fields was left blank
+    while 1:
+        if fieldValues == None:
+            break
+        errmsg = ""
+        try:
+            page = int(fieldValues[1])
+        except:
+            errmsg = errmsg + "Number of pages must be a number"
+        for i in range(len(fieldNames)):
+          if fieldValues[i].strip() == "":
+            errmsg = errmsg + ('"%s" is a required field.\n\n' % fieldNames[i])
+        if errmsg == "":
+            break  # no problems found
+        fieldValues = multenterbox(errmsg, title, fieldNames, fieldValues)
+
+    fieldValues.append(fileopenbox())
+    fieldValues[1] = int(fieldValues[1])
+    fieldValues[2] += ".docx"
+    print("Reply was:", fieldValues)
+    return fieldValues
+
+
 if __name__ == '__main__':
-    main()
+ main()
